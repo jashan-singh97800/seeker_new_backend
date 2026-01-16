@@ -15,7 +15,12 @@ async function bootstrap() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   app.enableCors({
-    origin: ['*'],
+    origin: [
+      'https://seeker-backend-asic52rxt-jashan-singh97800s-projects.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'https://seekernewbackend-production.up.railway.app'
+    ],
     credentials: true,
   });
 
