@@ -25,6 +25,7 @@ import { S3UploadService } from './common/services/s3-upload.service';
         redis: {
           host: configService.get('REDIS_HOST'),
           port: configService.get<number>('REDIS_PORT'),
+          password: configService.get('REDIS_PASSWORD'),
         },
       }),
       inject: [ConfigService],
