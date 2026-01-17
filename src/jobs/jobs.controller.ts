@@ -4,9 +4,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 
+import { JwtService } from '@nestjs/jwt';
+
 @Controller('jobs')
 export class JobsController {
-    constructor(private readonly jobsService: JobsService) { }
+    constructor(
+        private readonly jobsService: JobsService,
+        private readonly jwtService: JwtService
+    ) { }
 
     @Get()
     findAll(@Query() query: any) {
@@ -21,10 +26,29 @@ export class JobsController {
     }
 
     @Get(':id')
-    async findOne(@Param('id') id: string) {
+    async findOne(@Param('id') id: string, @Req() req: any) {
         const job = await this.jobsService.findOne(id);
-        // Increment view count
-        await this.jobsService.incrementViews(id);
+
+        let shouldIncrement = true;
+
+        if (req.headers.authorization) {
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = this.jwtService.decode(token) as any;
+
+                // If user is the owner, do not increment view count
+                if (decoded && decoded.sub === job.posted_by) {
+                    shouldIncrement = false;
+                }
+            } catch (error) {
+                // Ignore token errors, treat as guest
+            }
+        }
+
+        if (shouldIncrement) {
+            await this.jobsService.incrementViews(id);
+        }
+
         return job;
     }
 

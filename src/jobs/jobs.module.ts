@@ -6,11 +6,14 @@ import { JobsController } from './jobs.controller';
 import { SearchModule } from '../search/search.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 
+import { JwtModule } from '@nestjs/jwt';
+
 @Module({
   imports: [
     SequelizeModule.forFeature([Job]),
     SearchModule,
     AnalyticsModule,
+    JwtModule.register({}),
   ],
   providers: [JobsService],
   controllers: [JobsController],

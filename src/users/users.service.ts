@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/sequelize';
 import { User } from '../database/models/user.model';
 import { UserProfile } from '../database/models/user-profile.model';
@@ -16,45 +16,70 @@ export class UsersService {
     ) { }
 
     async findOneByEmail(email: string): Promise<User | null> {
-        return this.userModel.findOne({ where: { email } });
+        try {
+            return await this.userModel.findOne({ where: { email } });
+        } catch (error) {
+            console.error('Error in findOneByEmail:', error);
+            throw new InternalServerErrorException('Error finding user by email');
+        }
     }
 
     async findOneById(id: string): Promise<User | null> {
-        return this.userModel.findByPk(id);
+        try {
+            return await this.userModel.findByPk(id);
+        } catch (error) {
+            console.error('Error in findOneById:', error);
+            throw new InternalServerErrorException('Error finding user by ID');
+        }
     }
 
     async create(userData: any): Promise<User> {
-        const salt = await bcrypt.genSalt();
-        const password = userData.password || userData.password_hash || '';
-        const hash = await bcrypt.hash(password, salt);
+        try {
+            const salt = await bcrypt.genSalt();
+            const password = userData.password || userData.password_hash || '';
+            const hash = await bcrypt.hash(password, salt);
 
-        const { password: _, ...rest } = userData;
-        return this.userModel.create({
-            ...rest,
-            password_hash: hash,
-        });
+            const { password: _, ...rest } = userData;
+            return await this.userModel.create({
+                ...rest,
+                password_hash: hash,
+            });
+        } catch (error) {
+            console.error('Error in create user:', error);
+            throw new InternalServerErrorException('Error creating user');
+        }
     }
 
     async getProfile(userId: string): Promise<UserProfile> {
-        let profile = await this.userProfileModel.findOne({ where: { user_id: userId } });
+        try {
+            let profile = await this.userProfileModel.findOne({ where: { user_id: userId } });
 
-        // Create profile if it doesn't exist
-        if (!profile) {
-            profile = await this.userProfileModel.create({ user_id: userId });
+            // Create profile if it doesn't exist
+            if (!profile) {
+                profile = await this.userProfileModel.create({ user_id: userId });
+            }
+
+            return profile;
+        } catch (error) {
+            console.error('Error in getProfile:', error);
+            throw new InternalServerErrorException('Error fetching user profile');
         }
-
-        return profile;
     }
 
     async updateProfile(userId: string, profileData: any): Promise<UserProfile> {
-        let profile = await this.userProfileModel.findOne({ where: { user_id: userId } });
+        try {
+            let profile = await this.userProfileModel.findOne({ where: { user_id: userId } });
 
-        if (!profile) {
-            return this.userProfileModel.create({ user_id: userId, ...profileData });
+            if (!profile) {
+                return await this.userProfileModel.create({ user_id: userId, ...profileData });
+            }
+
+            await profile.update(profileData);
+            return profile;
+        } catch (error) {
+            console.error('Error in updateProfile:', error);
+            throw new InternalServerErrorException('Error updating user profile');
         }
-
-        await profile.update(profileData);
-        return profile;
     }
 
     async uploadResume(userId: string, file: any): Promise<{ url: string; s3Url: string; key: string }> {
@@ -129,5 +154,9 @@ export class UsersService {
     async getUserResume(userId: string): Promise<string | null> {
         const profile = await this.userProfileModel.findOne({ where: { user_id: userId } });
         return profile?.resume_url || null;
+    }
+
+    async getResumeStream(key: string): Promise<any> {
+        return this.s3UploadService.getFileStream(key);
     }
 }

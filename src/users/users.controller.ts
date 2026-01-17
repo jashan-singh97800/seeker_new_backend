@@ -50,19 +50,51 @@ export class UsersController {
 
     @Get(':id/resume')
     async downloadResume(@Param('id') id: string, @Res() res: Response) {
-        const resumeUrl = await this.usersService.getUserResume(id);
+        try {
+            const profile = await this.usersService.getProfile(id);
 
-        if (!resumeUrl) {
-            throw new NotFoundException('Resume not found');
+            if (!profile || !profile.resume_url) {
+                throw new NotFoundException('Resume not found');
+            }
+
+            // Prefer streaming from S3 if key is available
+            let key = profile.resume_key;
+
+            // If no key but we have a URL, try to extract key if it's from our S3 bucket
+            if (!key && profile.resume_url && profile.resume_url.includes('amazonaws.com')) {
+                try {
+                    const url = new URL(profile.resume_url);
+                    // Extract key from pathname (remove leading slash)
+                    key = url.pathname.substring(1);
+                    // Handle encoded characters if any
+                    key = decodeURIComponent(key);
+                } catch (e) {
+                    console.error('Failed to extract key from URL:', e);
+                }
+            }
+
+            if (key) {
+                const fileStream = await this.usersService.getResumeStream(key);
+                res.set({
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `inline; filename="resume-${id}.pdf"`,
+                });
+                fileStream.pipe(res);
+                return;
+            }
+
+            // Fallback to redirect if no key could be resolved
+            if (profile.resume_url && profile.resume_url.startsWith('http')) {
+                return res.redirect(profile.resume_url);
+            }
+
+            // Fallback for local files
+            const filePath = join(process.cwd(), profile.resume_url);
+            res.download(filePath);
+        } catch (error) {
+            console.error('Error downloading resume:', error);
+            if (error instanceof NotFoundException) throw error;
+            throw new NotFoundException('Resume not accessible');
         }
-
-        // If it's a full S3 URL, redirect to it
-        if (resumeUrl.startsWith('http')) {
-            return res.redirect(resumeUrl);
-        }
-
-        // Fallback for local files if any exist
-        const filePath = join(process.cwd(), resumeUrl);
-        res.download(filePath);
     }
 }

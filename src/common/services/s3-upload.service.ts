@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import { extname } from 'path';
 
@@ -85,6 +85,22 @@ export class S3UploadService {
         }
         if (file.mimetype !== 'application/pdf') {
             throw new BadRequestException('Only PDF files are allowed');
+        }
+    }
+
+    async getFileStream(key: string): Promise<any> {
+        if (!key) throw new BadRequestException('File key is required');
+
+        try {
+            const command = new GetObjectCommand({
+                Bucket: this.bucket,
+                Key: key,
+            });
+            const { Body } = await this.s3Client.send(command);
+            return Body;
+        } catch (error) {
+            console.error('Failed to get file stream from S3:', error);
+            throw new BadRequestException('Failed to retrieve file');
         }
     }
 }
