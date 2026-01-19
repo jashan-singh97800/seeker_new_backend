@@ -26,7 +26,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'seeker-backend-gfuumpupv-jashan-singh97800s-projects.vercel.app'],
+      'https://seeker-backend-gfuumpupv-jashan-singh97800s-projects.vercel.app'],
     credentials: true,
   });
 
