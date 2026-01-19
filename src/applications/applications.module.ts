@@ -6,12 +6,14 @@ import { ApplicationsService } from './applications.service';
 import { ApplicationsController } from './applications.controller';
 import { AnalyticsModule } from '../analytics/analytics.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     SequelizeModule.forFeature([Application, Job]),
     AnalyticsModule,
     NotificationsModule,
+    AuthModule,
   ],
   providers: [ApplicationsService],
   controllers: [ApplicationsController],
