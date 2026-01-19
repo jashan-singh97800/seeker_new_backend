@@ -24,10 +24,9 @@ async function bootstrap() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+
   app.enableCors({
-    origin: [
-      'https://seeker-backend-gfuumpupv-jashan-singh97800s-projects.vercel.app'],
-    credentials: true,
+    origin: '*',
   });
 
   const port = process.env.PORT || 3000;
