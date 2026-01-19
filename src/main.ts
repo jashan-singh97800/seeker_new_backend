@@ -27,6 +27,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: 'https://seeker-backend-nine.vercel.app',
+    credentials: true,
   });
 
   const port = process.env.PORT || 3000;
