@@ -1,14 +1,15 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from './models/user.model';
-import { UserProfile } from './models/user-profile.model';
-import { Company } from './models/company.model';
 import { Job } from './models/job.model';
 import { Application } from './models/application.model';
+import { Company } from './models/company.model';
 import { SavedJob } from './models/saved-job.model';
 import { JobAlert } from './models/job-alert.model';
+import { UserProfile } from './models/user-profile.model';
 import { AuditLog } from './models/audit-log.model';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { SeedService } from './seed.service';
 
 @Module({
     imports: [
@@ -17,17 +18,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
                 dialect: 'mysql',
-                host: configService.get<string>('DATABASE_HOST'),
+                host: configService.get('DATABASE_HOST'),
                 port: configService.get<number>('DATABASE_PORT'),
-                username: configService.get<string>('DATABASE_USERNAME'),
-                password: configService.get<string>('DATABASE_PASSWORD'),
-                database: configService.get<string>('DATABASE_NAME'),
-                models: [User, UserProfile, Company, Job, Application, SavedJob, JobAlert, AuditLog],
+                username: configService.get('DATABASE_USERNAME'),
+                password: configService.get('DATABASE_PASSWORD'),
+                database: configService.get('DATABASE_NAME'),
+                models: [User, Job, Application, Company, SavedJob, JobAlert, UserProfile, AuditLog],
                 autoLoadModels: true,
-                synchronize: true, // Set to false in production
+                synchronize: true,
             }),
         }),
+        SequelizeModule.forFeature([Company]),
     ],
-    exports: [SequelizeModule],
+    providers: [SeedService],
+    exports: [SeedService],
 })
 export class DatabaseModule { }

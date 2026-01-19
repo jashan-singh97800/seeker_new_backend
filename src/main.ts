@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { join } from 'path';
 import { ValidationPipe } from '@nestjs/common';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { SeedService } from './database/seed.service';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -29,6 +30,10 @@ async function bootstrap() {
     origin: 'https://seeker-backend-nine.vercel.app',
     credentials: true,
   });
+
+  // Run seeds
+  const seedService = app.get(SeedService);
+  await seedService.seedCompanies();
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
